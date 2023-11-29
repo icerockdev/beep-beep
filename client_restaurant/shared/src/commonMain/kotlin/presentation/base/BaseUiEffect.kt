@@ -1,3 +1,0 @@
-package presentation.base
-
-interface BaseUiEffect
