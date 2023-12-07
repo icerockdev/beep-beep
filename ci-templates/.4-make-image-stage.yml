@@ -1,0 +1,49 @@
+## Make image section
+## ---------------------------------------------------------------------------------------------------------------------
+.make_nginx_template: &make_nginx_template
+  stage: make-image
+  image: ${DOCKER_BUILD_IMAGE}
+  services:
+    - ${DOCKER_DIND_IMAGE}
+  tags:
+    - docker-dind
+  script:
+    - echo "${CI_REGISTRY_PASSWORD}" | docker login -u "${CI_REGISTRY_USER}" "${CI_REGISTRY}" --password-stdin
+    - tar -xzf ${ARCHIVE_INIT}
+    - rm ${ARCHIVE_INIT}
+    - export IMAGE_NGINX=`cat docker/build/nginx`
+    - export CI_TAG=`cat docker/build/tag`
+    - docker pull $NGINX_BUILD_IMAGE
+    # make
+    - docker build --cache-from $NGINX_BUILD_IMAGE -t ${IMAGE_NGINX}:latest  -t ${IMAGE_NGINX}:${CI_TAG} --build-arg NGINX_BUILD_IMAGE=$NGINX_BUILD_IMAGE -f docker/common/nginx.Dockerfile .
+    # push images
+    - docker push $IMAGE_NGINX:latest
+    - docker push $IMAGE_NGINX:$CI_TAG
+
+.make_java_template: &make_java_template
+  stage: make-image
+  image: ${DOCKER_BUILD_IMAGE}
+  services:
+    - ${DOCKER_DIND_IMAGE}
+  tags:
+    - docker-dind
+  before_script:
+    - tar -xzf ${ARCHIVE_INIT}
+    - rm ${ARCHIVE_INIT}
+    - mkdir -p app-build
+    - tar -xzf ${ARCHIVE_JAR} -C app-build
+    - rm ${ARCHIVE_JAR}
+    - export IMAGE_JAVA="`cat docker/build/app`-${SERVICE}"
+    - export CI_TAG=`cat docker/build/tag`
+  script:
+    - echo "${CI_REGISTRY_PASSWORD}" | docker login -u "${CI_REGISTRY_USER}" "${CI_REGISTRY}" --password-stdin
+    - docker pull ${JAVA_BUILD_IMAGE}
+    # build
+    - mkdir -p app/build/libs
+    - mkdir -p build
+    - docker build --build-arg SERVICE=${SERVICE} --cache-from ${JAVA_BUILD_IMAGE} -t ${IMAGE_JAVA}:latest -t ${IMAGE_JAVA}:${CI_TAG} -f docker/common/java.Dockerfile .
+    # push images
+    - docker push ${IMAGE_JAVA}:latest
+
+## ---------------------------------------------------------------------------------------------------------------------
+## End make image section

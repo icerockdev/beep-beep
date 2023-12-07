@@ -1,0 +1,286 @@
+variables:
+  DOCKER_DRIVER: overlay2
+  GIT_STRATEGY: fetch
+  GIT_SUBMODULE_STRATEGY: recursive
+  DOCKER_BUILD_IMAGE: docker:latest
+  DOCKER_DIND_IMAGE: docker:dind
+  NGINX_BUILD_IMAGE: gitlab.icerockdev.com:4567/docker/nginx/nginx-alpine:latest
+  JAVA_BUILD_IMAGE: gitlab.icerockdev.com:4567/docker/java/openjdk-slim-11:latest
+  SYNC_FOLDER: docker/sync
+  ARCHIVE_INIT: init.tar.gz
+  ARCHIVE_JAR: app.build.tar.gz
+
+stages:
+#  - lint
+  - init
+  - build
+  - make-image
+  - deploy
+
+# Templates included from configuration/ci-templates repo
+# https://gitlab.icerockdev.com/web/configuration/ci-templates
+
+include:
+  # Common
+  - local: '/ci-templates/.0-common.yml'
+
+  # Lint
+  - local: '/ci-templates/.1-lint-stage.yml'
+
+  # Init
+  - local: '/ci-templates/.2-init-stage.yml'
+
+  # Build
+  - project: 'web/configuration/ci-templates'
+    ref: 'master'
+    file: '/kotlin/spring/build.gitlab-ci.yml'
+
+  - local: '/ci-templates/.3-build-stage.yml'
+
+  # Make image
+  - project: 'web/configuration/ci-templates'
+    ref: 'master'
+    file: '/kotlin/make-image.gitlab-ci.yml'
+
+  - local: '/ci-templates/.4-make-image-stage.yml'
+
+  # Deploy
+  - local: '/ci-templates/.5-deploy-stage.yml'
+
+  # Pages
+  # - local: '/ci-templates/.page-stage.yml'
+
+
+### Development build java
+Development build java:
+  extends:
+    - .build-java
+    - .only_dev_definition
+
+### Staging build java
+Staging build java:
+  extends:
+    - .build-java
+    - .only_stage_definition
+
+### Production build java
+Production build java:
+  extends:
+    - .build-java
+    - .only_prod_definition
+
+### Development build web
+Development build web:
+  extends:
+    - .build_web_template
+    - .only_dev_definition
+  variables:
+    BUILD_ENV: 'dev'
+
+### Staging build web
+Staging build web:
+  extends:
+    - .build_web_template
+    - .only_stage_definition
+  variables:
+    BUILD_ENV: 'stage'
+
+### Production build admin
+Production build web:
+  extends:
+    - .build_web_template
+    - .only_prod_definition
+  variables:
+    BUILD_ENV: 'prod'
+
+### Development build admin
+Development build admin:
+  extends:
+    - .build_admin_template
+    - .only_dev_definition
+  variables:
+    BUILD_ENV: 'dev'
+
+### Staging build admin
+Staging build admin:
+  extends:
+    - .build_admin_template
+    - .only_stage_definition
+  variables:
+    BUILD_ENV: 'stage'
+
+### Production build admin
+Production build admin:
+  extends:
+    - .build_admin_template
+    - .only_prod_definition
+  variables:
+    BUILD_ENV: 'prod'
+
+### Development make nginx
+Development make nginx:
+  extends:
+    - .make_nginx_template
+    - .only_dev_definition
+  variables:
+    BUILD_ENV: 'dev'
+  before_script:
+    - tar -xzf ${ARCHIVE_ADMIN} -C admin
+  dependencies:
+    - Development init
+    - Development build admin
+  needs:
+    - Development init
+    - Development build admin
+
+### Staging make nginx
+Staging make nginx:
+  extends:
+    - .make_nginx_template
+    - .only_stage_definition
+  variables:
+    BUILD_ENV: 'stage'
+  before_script:
+    - tar -xzf ${ARCHIVE_ADMIN} -C admin
+  dependencies:
+    - Staging init
+    - Staging build admin
+  needs:
+    - Staging init
+    - Staging build admin
+
+### Production make nginx
+Production make nginx:
+  extends:
+    - .make_nginx_prod_template
+    - .only_prod_definition
+  variables:
+    BUILD_ENV: 'prod'
+  before_script:
+    - tar -xzf ${ARCHIVE_ADMIN} -C admin
+  dependencies:
+    - Production init
+    - Production build admin
+  needs:
+    - Production init
+    - Production build admin
+
+### Development make web
+Development make web:
+  extends:
+    - .make_web_template
+    - .only_dev_definition
+  variables:
+    BUILD_ENV: 'dev'
+  before_script:
+    - tar -xzf ${ARCHIVE_WEB} -C web
+  dependencies:
+    - Development init
+    - Development build web
+  needs:
+    - Development init
+    - Development build web
+
+### Staging make web
+Staging make web:
+  extends:
+    - .make_web_template
+    - .only_stage_definition
+  variables:
+    BUILD_ENV: 'stage'
+  before_script:
+    - tar -xzf ${ARCHIVE_WEB} -C web
+  dependencies:
+    - Staging init
+    - Staging build web
+  needs:
+    - Staging init
+    - Staging build web
+
+### Production make web
+Production make web:
+  extends:
+    - .make_web_template
+    - .only_prod_definition
+  variables:
+    BUILD_ENV: 'prod'
+  before_script:
+    - tar -xzf ${ARCHIVE_WEB} -C web
+  dependencies:
+    - Production init
+    - Production build web
+  needs:
+    - Production init
+    - Production build web
+
+### Development make java
+Development make java:
+  extends:
+    - .make_java_template
+    - .only_dev_definition
+  variables:
+    BUILD_ENV: 'dev'
+  dependencies:
+    - Development init
+    - Development build java
+  needs:
+    - Development init
+    - Development build java
+
+### Staging make java
+Staging make java:
+  extends:
+    - .make_java_template
+    - .only_stage_definition
+  variables:
+    BUILD_ENV: 'stage'
+  dependencies:
+    - Staging init
+    - Staging build java
+  needs:
+    - Staging init
+    - Staging build java
+
+### Production make java
+Production make java:
+  extends:
+    - .make_java_template
+    - .only_prod_definition
+  variables:
+    BUILD_ENV: 'prod'
+  dependencies:
+    - Production init
+    - Production build java
+  needs:
+    - Production init
+    - Production build java
+
+### Development deploy
+Development deploy:
+  extends:
+    - .deploy_template
+    - .only_dev_definition
+  variables:
+    BUILD_ENV: 'dev'
+  dependencies:
+    - Development init
+
+### Staging deploy
+Staging deploy:
+  extends:
+    - .deploy_template
+    - .only_stage_definition
+  variables:
+    BUILD_ENV: 'stage'
+  dependencies:
+    - Staging init
+
+### Production deploy
+Production deploy:
+  extends:
+    - .deploy_prod_template
+    - .only_prod_definition
+  variables:
+    BUILD_ENV: 'prod'
+  dependencies:
+    - Production init

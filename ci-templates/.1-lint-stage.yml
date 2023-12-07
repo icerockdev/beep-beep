@@ -1,0 +1,68 @@
+variables:
+  ARCHIVE_LINT_REPORT: build/reports/detekt
+  ARCHIVE_TESTS_REPORT: '**/build/reports/tests/test'
+  JUNIT_TESTS_REPORT: '**/build/test-results/test/TEST-*.xml'
+  ARCHIVE_LINT_OPENAPI_REPORT: build/reports/openapi
+
+## Start all lint section
+## ---------------------------------------------------------------------------------------------------------------------
+lint:
+  tags:
+    - shell-executor
+    - java11
+    - fast
+  stage: lint
+  script:
+    - export GRADLE_USER_HOME=`pwd`/.gradle
+    - mkdir -p .gradle
+    - ./gradlew clean
+    - ./project.sh jcgen-native
+    - ./gradlew build
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /^version\/*.*.*/'
+      changes:
+        - "**/*.kt"
+  cache:
+    paths:
+      - .gradle
+  artifacts:
+    when: always
+    paths:
+      - ${ARCHIVE_LINT_REPORT}
+      - ${ARCHIVE_TESTS_REPORT}
+    reports:
+      junit: ${JUNIT_TESTS_REPORT}
+    expire_in: 1 days
+
+## End all lint section
+## ---------------------------------------------------------------------------------------------------------------------
+
+## Start all lint openapi section
+## ---------------------------------------------------------------------------------------------------------------------
+lint-openapi:
+  stage: lint
+  image:
+    name: "jamescooke/openapi-validator:0.21.0"
+    entrypoint: [ "/bin/sh", "-c" ]
+  tags:
+    - docker-dind
+  script:
+    - set -e
+    - LINT_OPENAPI_CONFIG_FILE=$(find docs/ -type f -name '.validaterc')
+    - mkdir -p $ARCHIVE_LINT_OPENAPI_REPORT
+    - find docs/ -type f -regex '.*\(swagger\|openapi\).*\.\(yml\|yaml\)' -print0 | xargs -n1 -0 sh -c 'lint-openapi -s -c $1 $3 > $2/report-$(basename $3).txt' _ "$LINT_OPENAPI_CONFIG_FILE" "$ARCHIVE_LINT_OPENAPI_REPORT"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /^version\/*.*.*/'
+      changes:
+        - "**/*openapi*.yml"
+        - "**/*openapi*.yaml"
+        - "**/*swagger*.yml"
+        - "**/*swagger*.yaml"
+  artifacts:
+    when: always
+    paths:
+      - ${ARCHIVE_LINT_OPENAPI_REPORT}
+    expire_in: 1 days
+
+## End all lint openapi section
+## ---------------------------------------------------------------------------------------------------------------------

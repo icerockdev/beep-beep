@@ -1,0 +1,25 @@
+## Build app section
+## ---------------------------------------------------------------------------------------------------------------------
+
+.build-java: &build-java
+  tags:
+    - shell-executor
+    - java11
+    - fast
+  stage: build
+  script:
+    - export GRADLE_USER_HOME=`pwd`/.gradle
+    - ./gradlew clean
+    - ./gradlew buildFatJar
+    - tar -czf ${ARCHIVE_JAR} ./build
+    - ./gradlew clean
+  cache:
+    paths:
+      - .gradle
+  artifacts:
+    paths:
+      - ${ARCHIVE_JAR}
+    expire_in: 1 days
+
+## End build app section
+## ---------------------------------------------------------------------------------------------------------------------

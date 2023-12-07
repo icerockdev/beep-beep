@@ -1,0 +1,72 @@
+version: '3.4'
+
+services:
+  nginx:
+    image: ${IMAGE_NGINX}
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SSL: "on"
+      SSL_DOMAIN: "${API_SERVER_NAME}"
+      SSL_EMAIL: 'ssl@icerockdev.com'
+      API_SERVER_NAME: ${API_SERVER_NAME}
+    volumes:
+      - ./nginx-data:/etc/letsencrypt
+    logging: &logging
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+    stop_grace_period: 30s
+    restart: always
+    depends_on:
+      - web
+
+  backend:
+    image: ${IMAGE_JAVA}
+    restart: always
+    stop_grace_period: 30s
+    logging: *logging
+    ports:
+      - "127.0.0.1:1099:1099"
+    env_file:
+      - .env
+    depends_on:
+      - mongodb
+
+  api_gateway:
+    restart: always
+    build:
+      context: ./api_gateway
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+
+  service_identity:
+    restart: always
+    build:
+      context: ./service_identity
+    env_file:
+      - .env
+    depends_on:
+      - mongodb
+    volumes:
+      - ./:/app
+    ports:
+      - "8082:8080"
+
+  mongodb:
+    restart: always
+    image: ${IMAGE_MONGO}
+    env_file:
+      - docker/environment/local/db.env
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+
+volumes:
+  mongo-data:
+    driver: local

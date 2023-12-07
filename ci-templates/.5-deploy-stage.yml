@@ -1,0 +1,76 @@
+# Deploy
+.deploy_template: &deploy_template
+  stage: deploy
+  tags:
+    - docker-dind
+  image: gitlab.icerockdev.com:4567/docker/k8s-deploy/kubectl
+  when: manual # only manual run by button
+  script:
+    - tar -xzf ${ARCHIVE_INIT}
+    - rm ${ARCHIVE_INIT}
+    - eval $(ssh-agent -s)
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    # deploy env export
+    - deploy_env=${BUILD_ENV}_deploy_env
+    - deploy_env=${!deploy_env}
+    - export $(grep -v '^#' ${deploy_env} | xargs) # export env to shell
+    # Remote
+    ## $DEPLOY_KEY is base64 rsa string where \n replaced on _ for valid ENV interpretation
+    - export DEPLOY_KEY=`echo "$SSH_DEPLOY_KEY" | base64 -d`
+    - echo $DEPLOY_KEY | tr _ "\n" | ssh-add - > /dev/null
+    - ssh-keyscan -p$REMOTE_PORT -4 $REMOTE_HOST >> ~/.ssh/known_hosts
+    # prepare
+    - mkdir -p ${SYNC_FOLDER}
+    - cp docker/environment/${BUILD_ENV}/.env ${SYNC_FOLDER}/.env
+    - cp docker/common/db-backup.sh ${SYNC_FOLDER}/db-backup.sh
+    - cp docker/common/docker-compose.yml ${SYNC_FOLDER}/docker-compose.yml
+    - cp docker/common/db-restore-postgres.sh ${SYNC_FOLDER}/db-restore-postgres.sh # PSQL by default
+    # configure env
+    - app_env=${BUILD_ENV}_app_env
+    - app_env=${!app_env}
+    # append new line
+    - echo -e "\n" >> ${SYNC_FOLDER}/.env
+    # move secrets to file
+    - cat ${app_env} >> ${SYNC_FOLDER}/.env
+    # Deploy
+    - chmod 777 ./docker/deploy/deploy.sh
+    - ./docker/deploy/deploy.sh
+
+.deploy_prod_template: &deploy_prod_template
+  stage: deploy
+  tags:
+    - docker-dind
+  image: gitlab.icerockdev.com:4567/docker/k8s-deploy/kubectl
+  when: manual # only manual run by button
+  script:
+    - tar -xzf ${ARCHIVE_INIT}
+    - rm ${ARCHIVE_INIT}
+    - eval $(ssh-agent -s)
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    # deploy env export
+    - deploy_env=${BUILD_ENV}_deploy_env
+    - deploy_env=${!deploy_env}
+    - export $(grep -v '^#' ${deploy_env} | xargs) # export env to shell
+    # Remote
+    ## $DEPLOY_KEY is base64 rsa string where \n replaced on _ for valid ENV interpretation
+    - export DEPLOY_KEY=`echo "$SSH_DEPLOY_KEY" | base64 -d`
+    - echo $DEPLOY_KEY | tr _ "\n" | ssh-add - > /dev/null
+    - ssh-keyscan -p$REMOTE_PORT -4 $REMOTE_HOST >> ~/.ssh/known_hosts
+    # prepare
+    - mkdir -p ${SYNC_FOLDER}
+    - cp docker/environment/${BUILD_ENV}/.env ${SYNC_FOLDER}/.env
+    - cp docker/common/db-backup.sh ${SYNC_FOLDER}/db-backup.sh
+    - cp docker/common/docker-compose-prod.yml ${SYNC_FOLDER}/docker-compose.yml
+    - cp docker/common/db-restore-postgres.sh ${SYNC_FOLDER}/db-restore-postgres.sh # PSQL by default
+    # configure env
+    - app_env=${BUILD_ENV}_app_env
+    - app_env=${!app_env}
+    # append new line
+    - echo -e "\n" >> ${SYNC_FOLDER}/.env
+    # move secrets to file
+    - cat ${app_env} >> ${SYNC_FOLDER}/.env
+    # Deploy
+    - chmod 777 ./docker/deploy/deploy.sh
+    - ./docker/deploy/deploy.sh

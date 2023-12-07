@@ -1,0 +1,99 @@
+version: "3"
+services:
+  api_gateway:
+    build:
+      context: ./api_gateway
+    env_file:
+      - docker/environment/local/db.env
+    environment:
+      - JWT_SECRET=IaGHFBLg2EAVKGyr
+      - jwt_issuer=http://0.0.0.0:80
+      - jwt_audience=beep-beep-audience
+      - jwt_realm=Access to api gateway
+    ports:
+      - "8080:8080"
+    restart: always
+
+  service_chat:
+    build:
+      context: ./service_chat
+    env_file:
+      - docker/environment/local/db.env
+    ports:
+      - "8081:8080"
+    depends_on:
+      - mongodb
+    restart: always
+
+  service_identity:
+    restart: always
+    build:
+      context: ./service_identity
+    env_file:
+      - docker/environment/local/db.env
+    depends_on:
+      - mongodb
+    volumes:
+      - ./:/app
+    ports:
+      - "8082:8080"
+
+  service_location:
+    restart: always
+    build:
+      context: ./service_location
+    volumes:
+      - ./:/app
+    ports:
+      - "8083:8080"
+
+  service_notification:
+    restart: always
+    build:
+      context: ./service_notification
+    environment:
+      - firebase_key =
+    volumes:
+      - ./:/app
+    ports:
+      - "8084:8080"
+
+  service_restaurant:
+    restart: always
+    build:
+      context: ./service_restaurant
+    env_file:
+      - docker/environment/local/db.env
+    depends_on:
+      - mongodb
+    volumes:
+      - ./:/app
+    ports:
+      - "8085:8080"
+
+  service_taxi:
+    restart: always
+    build:
+      context: ./service_taxi
+    env_file:
+      - docker/environment/local/db.env
+    volumes:
+      - ./:/app
+    depends_on:
+      - mongodb
+    ports:
+      - "8086:8080"
+
+  mongodb:
+    restart: always
+    image: mongo:7.0.4
+    env_file:
+      - docker/environment/local/db.env
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+
+volumes:
+  mongo-data:
+    driver: local

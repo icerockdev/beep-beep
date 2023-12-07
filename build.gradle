@@ -1,1 +1,25 @@
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
+buildscript {
+}
+
+
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+
+    configurations {
+        runtimeClasspath
+    }
+
+    task copyLibsCompile(type: Copy) {
+        from configurations.runtimeClasspath
+        into "$project.rootDir/build/libs/"
+    }
+
+    plugins.withId('org.jetbrains.kotlin.jvm', { _ ->
+        shadowJar.dependsOn copyLibsCompile
+        sourceCompatibility = JavaVersion.VERSION_11
+        compileKotlin.kotlinOptions.jvmTarget = JavaVersion.VERSION_11.toString()
+        compileTestKotlin.kotlinOptions.jvmTarget = JavaVersion.VERSION_11.toString()
+    })
+}

@@ -1,0 +1,23 @@
+## Definitions section
+## ---------------------------------------------------------------------------------------------------------------------
+
+### Development definition
+.only_dev_definition:
+  only:
+    - develop
+    - test
+
+### Staging definition
+.only_stage_definition:
+  only:
+    - stage
+
+### Production definition
+.only_prod_definition:
+  only:
+    - /^release\/*/ # tag only
+  except:
+    - branches
+
+## End definitions section
+## ---------------------------------------------------------------------------------------------------------------------

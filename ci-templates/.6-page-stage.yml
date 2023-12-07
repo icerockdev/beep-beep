@@ -1,0 +1,13 @@
+## pages
+pages:
+  only:
+    - develop
+  tags:
+    - docker-dind
+  stage: deploy
+  script:
+    - mkdir public
+#    - cp ./swagger/customer-swagger.yaml ./public/customer.html
+  artifacts:
+    paths:
+      - public

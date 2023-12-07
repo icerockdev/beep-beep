@@ -1,0 +1,38 @@
+## Init section
+## ---------------------------------------------------------------------------------------------------------------------
+.init_template: &init_template
+  stage: init
+  tags:
+    - docker-dind
+  script:
+    # configure env
+    - echo "IMAGE_NGINX=${IMAGE_NGINX}:${CI_TAG}" >> docker/environment/${BUILD_ENV}/.env
+    - echo "IMAGE_JAVA=${IMAGE_JAVA}:${CI_TAG}" >> docker/environment/${BUILD_ENV}/.env
+    # save images name
+    - mkdir -p docker/build
+    - echo "${IMAGE_NGINX}" > docker/build/nginx
+    - echo "${IMAGE_JAVA}" > docker/build/app
+    - echo "${CI_TAG}" >> docker/build/tag
+    - echo "${BUILD_ENV}" >> docker/build/build_env
+    - tar --exclude='.git' -czf ../${ARCHIVE_INIT} ./docker
+    - mv ../${ARCHIVE_INIT} ${ARCHIVE_INIT}
+  artifacts:
+    paths:
+      - ${ARCHIVE_INIT}
+    expire_in: 1 days
+
+### Development init
+Development init:
+  <<: *init_template
+  extends:
+    - .only_dev_definition
+  before_script:
+    - export IMAGE_NGINX=${CI_REGISTRY_IMAGE}/${CI_COMMIT_REF_SLUG}/nginx
+    - export IMAGE_JAVA=${CI_REGISTRY_IMAGE}/${CI_COMMIT_REF_SLUG}/app
+    - export CI_TAG=`date +"%d.%m.%H.%M"`
+  environment:
+    name: dev
+  variables:
+    BUILD_ENV: 'dev'
+## ---------------------------------------------------------------------------------------------------------------------
+## End init section
