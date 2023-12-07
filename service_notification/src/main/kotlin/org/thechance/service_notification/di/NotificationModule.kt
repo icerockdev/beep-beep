@@ -15,16 +15,15 @@ class NotificationModule
 
 val kmongoModule = module {
     single {
-        val cluster = System.getenv("cluster")
-        val username = System.getenv("username")
-        val password = System.getenv("password")
+        val username = System.getenv("MONGO_USERNAME")
+        val password = System.getenv("MONGO_PASSWORD")
         val connectionString =
-            ConnectionString("mongodb+srv://$username:$password@$cluster.mongodb.net/")
+            ConnectionString("mongodb://$username:$password@mongodb:27017")
         KMongo.createClient(connectionString)
     }
 
     single {
-        val DATA_BASE_NAME = System.getenv("DB_NAME").toString()
+        val DATA_BASE_NAME = System.getenv("MONGO_DB_NAME").toString()
         get<MongoClient>().coroutine.getDatabase(DATA_BASE_NAME)
     }
 }

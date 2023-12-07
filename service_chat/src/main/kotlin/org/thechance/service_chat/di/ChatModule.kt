@@ -13,10 +13,9 @@ class ChatModule
 
 val kmongoModule = module {
     single {
-        val cluster = System.getenv("cluster")
-        val username = System.getenv("username")
-        val password = System.getenv("password")
-        val connectionString = ConnectionString("mongodb+srv://$username:$password@$cluster.mongodb.net/")
+        val username = System.getenv("MONGO_USERNAME")
+        val password = System.getenv("MONGO_PASSWORD")
+        val connectionString = ConnectionString("mongodb://$username:$password@mongodb:27017")
         val settings = MongoClientSettings.builder()
             .applyConnectionString(connectionString)
             .build()

@@ -10,10 +10,10 @@ import io.ktor.server.response.*
 
 fun Application.configureJWTAuthentication() {
 
-    val jwtSecret = System.getenv("jwt_secret").toString()
-    val jwtDomain = System.getenv("jwt_issuer").toString()
-    val jwtAudience = System.getenv("jwt_audience").toString()
-    val jwtRealm = System.getenv("jwt_realm").toString()
+    val jwtSecret = System.getenv("JWT_SECRET").toString()
+    val jwtDomain = System.getenv("JWT_ISSUER").toString()
+    val jwtAudience = System.getenv("JWT_AUDIENCE").toString()
+    val jwtRealm = System.getenv("JWT_REALM").toString()
 
     authentication {
         jwt("auth-jwt") {

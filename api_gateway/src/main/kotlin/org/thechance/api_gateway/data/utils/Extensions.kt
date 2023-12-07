@@ -5,7 +5,8 @@ import io.ktor.client.call.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import io.ktor.util.*
+import io.ktor.util.AttributeKey
+import io.ktor.util.Attributes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow

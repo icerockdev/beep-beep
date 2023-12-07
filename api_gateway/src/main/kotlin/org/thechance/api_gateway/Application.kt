@@ -13,9 +13,9 @@ fun main() {
 
 fun Application.module() {
 
-    val secret = System.getenv("jwt_secret").toString()
-    val issuer = System.getenv("jwt_issuer").toString()
-    val audience = System.getenv("jwt_audience").toString()
+    val secret = System.getenv("JWT_SECRET").toString()
+    val issuer = System.getenv("JWT_ISSUER").toString()
+    val audience = System.getenv("JWT_AUDIENCE").toString()
 
     val tokenConfig = TokenConfiguration(
         secret = secret,

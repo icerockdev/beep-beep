@@ -14,7 +14,7 @@ class DataBaseContainer(client: MongoClient) {
     val ticketCollection: CoroutineCollection<TicketCollection> = database.getCollection(TICKET_COLLECTION)
 
     companion object {
-        private val DATA_BASE_NAME = System.getenv("DB_NAME").toString()
+        private val DATA_BASE_NAME = System.getenv("MONGO_DB_NAME").toString()
         const val TICKET_COLLECTION = "ticket"
     }
 }
